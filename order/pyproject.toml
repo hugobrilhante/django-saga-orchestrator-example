@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "template"
+version = "0.1.0"
+description = ""
+authors = ["Hugo Brilhante <hugobrilhante@gmail.com>"]
+readme = "README.md"
+packages = [{include = "template", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "3.12.1"
+django = "^5.0.1"
+django-configurations = {extras = ["cache", "database", "email", "search"], version = "^2.5"}
+whitenoise = "^6.6.0"
+gunicorn = "^21.2.0"
+psycopg2-binary = "^2.9.9"
+python-json-logger = "^2.0.7"
+djangorestframework = "^3.14.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "3.5.0"
+
+[tool.ruff.lint.isort]
+force-single-line = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
