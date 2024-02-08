@@ -11,6 +11,32 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  publish:
+    build:
+      context: .
+    command: [ "python", "manage.py", "publish" ]
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  subscribe:
+    build:
+      context: .
+    command: [ "python", "manage.py", "subscribe", "src.core.orchestrator.orchestrator", "/exchange/saga/orchestrator", "orchestrator" ]
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
   db:
     image: postgis/postgis:16-3.4
     restart: always
@@ -25,6 +51,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  rabbitmq:
+    image: rabbitmq:3.9.29-management
+    volumes:
+      - ./rabbitmq:/etc/rabbitmq/
+    healthcheck:
+      test: [ "CMD-SHELL","rabbitmq-diagnostics -q ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+      - "61613:61613"
 volumes:
   db-data:
 
