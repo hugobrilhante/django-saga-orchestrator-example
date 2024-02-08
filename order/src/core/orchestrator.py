@@ -5,7 +5,6 @@ from .interfaces import ActionAbstract
 from .interfaces import CompensationAbstract
 from .interfaces import PublisherAbstract
 
-
 from typing import Any, Dict, Tuple
 
 
@@ -15,7 +14,7 @@ class OperationMixin:
         self.action = action
 
     def execute(
-        self, data: Any, sender: str, transaction_id: int
+        self, data: Any, sender: str, transaction_id: str
     ) -> Tuple[Dict[str, Any], str]:
         body = {
             "action": self.action,
@@ -31,7 +30,7 @@ class Action(ActionAbstract, OperationMixin):
         super().__init__(destination, action=True)
 
     def perform(
-        self, data: Any, sender: str, transaction_id: int
+        self, data: Any, sender: str, transaction_id: str
     ) -> Tuple[Dict[str, Any], str]:
         return self.execute(data, sender, transaction_id)
 
@@ -41,7 +40,7 @@ class Compensation(CompensationAbstract, OperationMixin):
         super().__init__(destination, action=False)
 
     def compensate(
-        self, data: Any, sender: str, transaction_id: int
+        self, data: Any, sender: str, transaction_id: str
     ) -> Tuple[Dict[str, Any], str]:
         return self.execute(data, sender, transaction_id)
 
@@ -96,22 +95,15 @@ class Orchestrator:
         self.compensations[service] = compensation
 
 
-# Orchestrator
-
 orchestrator = Orchestrator(Publisher())
 
-# Actions
-reserve_product_action = Action("/exchange/saga/stock")
-process_payment_action = Action("/exchange/saga/payment")
-deliver_order_action = Action("/exchange/saga/delivery")
-orchestrator.register_action("stock", reserve_product_action)
-orchestrator.register_action("payment", process_payment_action)
-orchestrator.register_action("delivery", deliver_order_action)
+steps = {
+    "order": "/exchange/saga/order",
+    "stock": "/exchange/saga/stock",
+    "payment": "/exchange/saga/payment",
+    "delivery": "/exchange/saga/delivery"
+}
 
-# Compensations
-compensate_reserve_product = Compensation("/exchange/saga/stock")
-compensate_process_payment = Compensation("/exchange/saga/payment")
-compensate_deliver_order = Compensation("/exchange/saga/delivery")
-orchestrator.register_compensation("stock", compensate_reserve_product)
-orchestrator.register_compensation("payment", compensate_process_payment)
-orchestrator.register_compensation("delivery", compensate_deliver_order)
+for key, value in steps.items():
+    orchestrator.register_action(key, Action(value))
+    orchestrator.register_compensation(key, Compensation(value))
