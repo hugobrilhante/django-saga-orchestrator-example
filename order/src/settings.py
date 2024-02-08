@@ -42,6 +42,7 @@ class Base(Configuration):
         "django.contrib.messages",
         "django.contrib.staticfiles",
         "rest_framework",
+        "django_outbox_pattern",
         # App locals
         "src.core.apps.CoreConfig",
     ]
@@ -136,6 +137,12 @@ class Base(Configuration):
 
     REST_FRAMEWORK = {
         "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.URLPathVersioning"
+    }
+
+    DJANGO_OUTBOX_PATTERN = {
+        "DEFAULT_STOMP_HOST_AND_PORTS": [("rabbitmq", 61613)],
+        "DEFAULT_STOMP_USERNAME": "guest",
+        "DEFAULT_STOMP_PASSCODE": "guest",
     }
 
     LOGGING = {
