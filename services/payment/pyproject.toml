@@ -26,7 +26,6 @@ line-length = 120
 include = ["pyproject.toml", "src/**/*.py", "test/**/*.py"]
 
 [tool.ruff.format]
-indent-style = "tab"
 quote-style = "single"
 
 [tool.ruff.lint]

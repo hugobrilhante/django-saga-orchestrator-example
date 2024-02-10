@@ -69,41 +69,39 @@ services:
       file: services/stock/compose.yaml
       service: stock-db
 
-#  # Payment Services
-#  payment:
-#    profiles: [ payment ]
-#    extends:
-#      file: services/payment/compose.yaml
-#      service: payment-service
-#    networks:
-#      - kong-net
-#
-#  # Payment Publish Service
-#  payment-publish:
-#    profiles: [ payment ]
-#    extends:
-#      file: services/payment/compose.yaml
-#      service: payment-publish
-#    depends_on:
-#      rabbitmq:
-#        condition: service_healthy
-#
-#  # Payment Subscribe Service
-#  payment-subscribe:
-#    profiles: [ payment ]
-#    extends:
-#      file: services/payment/compose.yaml
-#      service: payment-subscribe
-#    depends_on:
-#      rabbitmq:
-#        condition: service_healthy
-#
-#  # Payment Database Service
-#  payment-db:
-#    profiles: [ payment ]
-#    extends:
-#      file: services/payment/compose.yaml
-#      service: payment-db
+  # Payment Services
+  payment:
+    profiles: [ payment ]
+    extends:
+      file: services/payment/compose.yaml
+      service: payment
+
+  # Payment Publish Service
+  payment-publish:
+    profiles: [ payment ]
+    extends:
+      file: services/payment/compose.yaml
+      service: payment-publish
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # Payment Subscribe Service
+  payment-subscribe:
+    profiles: [ payment ]
+    extends:
+      file: services/payment/compose.yaml
+      service: payment-subscribe
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # Payment Database Service
+  payment-db:
+    profiles: [ payment ]
+    extends:
+      file: services/payment/compose.yaml
+      service: payment-db
 
   # RabbitMQ Service
   rabbitmq:

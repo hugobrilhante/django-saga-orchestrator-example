@@ -20,36 +20,36 @@ worker_tmp_dir = '/dev/shm'
 
 # Log for access and error
 logconfig_dict = {
-	'version': 1,
-	'formatters': {
-		'json': {
-			'()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
-			'format': '%(asctime)s %(name)s %(levelname)s %(message)s %(pathname)s %(lineno)d',
-		},
-	},
-	'handlers': {
-		'access': {
-			'class': 'logging.FileHandler',
-			'filename': '/var/log/gunicorn/access.log',
-			'formatter': 'json',
-		},
-		'error': {
-			'class': 'logging.FileHandler',
-			'filename': '/var/log/gunicorn/error.log',
-			'formatter': 'json',
-		},
-	},
-	'root': {'level': 'INFO', 'handlers': []},
-	'loggers': {
-		'gunicorn.access': {
-			'level': 'INFO',
-			'handlers': ['access'],
-			'propagate': False,
-		},
-		'gunicorn.error': {
-			'level': 'INFO',
-			'handlers': ['error'],
-			'propagate': False,
-		},
-	},
+    'version': 1,
+    'formatters': {
+        'json': {
+            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+            'format': '%(asctime)s %(name)s %(levelname)s %(message)s %(pathname)s %(lineno)d',
+        },
+    },
+    'handlers': {
+        'access': {
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/gunicorn/access.log',
+            'formatter': 'json',
+        },
+        'error': {
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/gunicorn/error.log',
+            'formatter': 'json',
+        },
+    },
+    'root': {'level': 'INFO', 'handlers': []},
+    'loggers': {
+        'gunicorn.access': {
+            'level': 'INFO',
+            'handlers': ['access'],
+            'propagate': False,
+        },
+        'gunicorn.error': {
+            'level': 'INFO',
+            'handlers': ['error'],
+            'propagate': False,
+        },
+    },
 }

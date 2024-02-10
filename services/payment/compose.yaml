@@ -1,17 +1,17 @@
 services:
-  stock:
+  payment:
     build:
       context: .
     ports:
-      - 8001:8001
+      - 8002:8002
     volumes:
       - .:/app
     env_file:
       - .env
     depends_on:
-      stock-db:
+      payment-db:
         condition: service_healthy
-  stock-publish:
+  payment-publish:
     build:
       context: .
     command: [ "python", "manage.py", "publish" ]
@@ -20,24 +20,24 @@ services:
     env_file:
       - .env
     depends_on:
-      stock-db:
+      payment-db:
         condition: service_healthy
-  stock-subscribe:
+  payment-subscribe:
     build:
       context: .
-    command: [ "python", "manage.py", "subscribe", "src.core.consumer.receiver", "/exchange/saga/stock", "stock" ]
+    command: [ "python", "manage.py", "subscribe", "src.core.consumer.receiver", "/exchange/saga/payment", "payment" ]
     volumes:
       - .:/app
     env_file:
       - .env
     depends_on:
-      stock-db:
+      payment-db:
         condition: service_healthy
-  stock-db:
+  payment-db:
     image: postgis/postgis:16-3.4
     restart: always
     volumes:
-      - stock-db-data:/var/lib/postgresql/data
+      - payment-db-data:/var/lib/postgresql/data
     env_file:
       - .env
     expose:
@@ -49,4 +49,4 @@ services:
       retries: 5
 
 volumes:
-  stock-db-data:
+  payment-db-data:
