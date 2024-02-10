@@ -102,7 +102,7 @@ steps = {
     "order": "/exchange/saga/order",
     "stock": "/exchange/saga/stock",
     "payment": "/exchange/saga/payment",
-    "delivery": "/exchange/saga/delivery"
+    "delivery": "/exchange/saga/delivery",
 }
 
 for key, value in steps.items():

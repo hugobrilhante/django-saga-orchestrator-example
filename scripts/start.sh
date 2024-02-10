@@ -14,28 +14,28 @@ check_status() {
 
 echo "Running migrations..."
 
-source scripts/manage.sh order migrate 
-source scripts/manage.sh stock migrate 
-#source scripts/manage.sh payment migrate 
+source scripts/manage.sh order migrate
+source scripts/manage.sh stock migrate
+#source scripts/manage.sh payment migrate
 
 echo "Loading data..."
 
-source scripts/manage.sh order loaddata order 
-source scripts/manage.sh stock loaddata stock 
-#source scripts/manage.sh payment loaddata payment 
+source scripts/manage.sh order loaddata order
+source scripts/manage.sh stock loaddata stock
+#source scripts/manage.sh payment loaddata payment
 
 # Starting RabbitMQ to create the exchange
-docker compose up -d rabbitmq 
+docker compose up -d rabbitmq
 
 while ! check_status; do
     echo "Creating saga exchange..."
     sleep 10
 done
 
-docker compose exec rabbitmq rabbitmqadmin declare exchange name=saga type=topic 
+docker compose exec rabbitmq rabbitmqadmin declare exchange name=saga type=topic
 
 # Stopping RabbitMQ
-docker compose stop rabbitmq 
+docker compose stop rabbitmq
 
 echo "Starting services..."
 

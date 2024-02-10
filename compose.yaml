@@ -125,4 +125,3 @@ volumes:
   order-db-data:
   stock-db-data:
   payment-db-data:
-

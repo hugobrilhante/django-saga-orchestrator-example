@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -13,6 +12,7 @@ class Product(models.Model):
 
 
 class Reservation(models.Model):
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
     created = models.DateTimeField(auto_now_add=True)
     transaction_id = models.CharField(max_length=100)
 
@@ -22,7 +22,7 @@ class Reservation(models.Model):
 
 class ReservationItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    reservation = models.ForeignKey(Reservation,  on_delete=models.CASCADE)
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
 

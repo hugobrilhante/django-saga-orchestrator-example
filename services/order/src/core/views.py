@@ -11,9 +11,9 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         order = serializer.save()
-        data = serializer.data["items"]
+        data = {"amount": str(order.amount), "items": serializer.data["items"]}
         transaction_id = str(order.transaction_id)
-        orchestrator.perform(
+        orchestrator.compensate(
             data=data,
             sender="order",
             service="stock",

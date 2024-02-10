@@ -21,6 +21,13 @@ class Order(models.Model):
     def __str__(self):
         return f"Order #{self.id} - Customer ID: {self.customer_id}"
 
+    @property
+    def amount(self):
+        total = 0
+        for item in self.items.all():
+            total += item.price * item.quantity
+        return total
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name="items", on_delete=models.CASCADE)

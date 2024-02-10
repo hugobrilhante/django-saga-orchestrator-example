@@ -50,5 +50,3 @@ services:
 
 volumes:
   order-db-data:
-
-
