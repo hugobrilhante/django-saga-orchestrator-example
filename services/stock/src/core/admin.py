@@ -16,9 +16,8 @@ class ReservationItemInline(admin.TabularInline):  # ou admin.StackedInline
 
 @admin.register(Reservation)
 class ReservationAdmin(admin.ModelAdmin):
-    list_display = ["id", "customer_id", "status", "created"]
-    list_filter = ["status"]
-    search_fields = ["customer_id", "transaction_id"]
+    list_display = ["id", "transaction_id", "created"]
+    search_fields = ["transaction_id"]
     inlines = [ReservationItemInline]
 
 

@@ -13,7 +13,14 @@ class ReservationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Reservation
-        fields = ["customer_id", "transaction_id", "items"]
+        fields = ["transaction_id", "items"]
+
+    def validate_items(self, value):
+        # Fake validate for simplicity
+        for item in value:
+            if item["quantity"] > 100:
+                raise serializers.ValidationError("There is not enough quantity of this product available.")
+        return value
 
     def create(self, validated_data):
         items = validated_data.pop("items")

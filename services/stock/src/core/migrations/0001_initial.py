@@ -27,9 +27,6 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('created', models.DateTimeField(auto_now_add=True)),
-                ('customer_id', models.CharField(max_length=100)),
-                ('modified', models.DateTimeField(auto_now=True)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('confirmed', 'Confirmed'), ('cancelled', 'Cancelled')], default='pending', max_length=20)),
                 ('transaction_id', models.CharField(max_length=100)),
             ],
         ),
@@ -40,7 +37,7 @@ class Migration(migrations.Migration):
                 ('quantity', models.PositiveIntegerField()),
                 ('price', models.DecimalField(decimal_places=2, max_digits=10)),
                 ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.product')),
-                ('reservation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='items', to='core.reservation')),
+                ('reservation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.reservation')),
             ],
         ),
     ]

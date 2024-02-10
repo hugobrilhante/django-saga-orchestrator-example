@@ -1,17 +1,17 @@
 services:
-  app:
+  stock:
     build:
       context: .
     ports:
-      - 8000:8000
+      - 8001:8001
     volumes:
       - .:/app
     env_file:
       - .env
     depends_on:
-      db:
+      stock-db:
         condition: service_healthy
-  publish:
+  stock-publish:
     build:
       context: .
     command: [ "python", "manage.py", "publish" ]
@@ -20,28 +20,24 @@ services:
     env_file:
       - .env
     depends_on:
-      db:
+      stock-db:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-  subscribe:
+  stock-subscribe:
     build:
       context: .
-    command: [ "python", "manage.py", "subscribe", "src.core.orchestrator.orchestrator", "/exchange/saga/orchestrator", "orchestrator" ]
+    command: [ "python", "manage.py", "subscribe", "src.core.consumer.receiver", "/exchange/saga/stock", "stock" ]
     volumes:
       - .:/app
     env_file:
       - .env
     depends_on:
-      db:
+      stock-db:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-  db:
+  stock-db:
     image: postgis/postgis:16-3.4
     restart: always
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - stock-db-data:/var/lib/postgresql/data
     env_file:
       - .env
     expose:
@@ -51,19 +47,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-  rabbitmq:
-    image: rabbitmq:3.9.29-management
-    volumes:
-      - ../rabbitmq:/etc/rabbitmq/
-    healthcheck:
-      test: [ "CMD-SHELL","rabbitmq-diagnostics -q ping" ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    ports:
-      - "15672:15672"
-      - "5672:5672"
-      - "61613:61613"
-volumes:
-  db-data:
 
+volumes:
+  stock-db-data:

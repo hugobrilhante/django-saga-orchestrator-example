@@ -32,6 +32,7 @@ class Action(ActionAbstract, OperationMixin):
     def perform(
         self, data: Any, sender: str, transaction_id: str
     ) -> Tuple[Dict[str, Any], str]:
+        print("Sender by:", sender)
         return self.execute(data, sender, transaction_id)
 
 

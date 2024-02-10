@@ -1,0 +1,128 @@
+version: '3.9'
+
+services:
+  # Order Services
+  order:
+    profiles: [ order ]
+    extends:
+      file: services/order/compose.yaml
+      service: order
+
+  # Order Publish Service
+  order-publish:
+    profiles: [ order ]
+    extends:
+      file: services/order/compose.yaml
+      service: order-publish
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # Order Subscribe Service
+  order-subscribe:
+    profiles: [ order ]
+    extends:
+      file: services/order/compose.yaml
+      service: order-subscribe
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # Order Database Service
+  order-db:
+    profiles: [ order ]
+    extends:
+      file: services/order/compose.yaml
+      service: order-db
+
+  # Stock Services
+  stock:
+    profiles: [ stock ]
+    extends:
+      file: services/stock/compose.yaml
+      service: stock
+
+  # Stock Publish Service
+  stock-publish:
+    profiles: [ stock ]
+    extends:
+      file: services/stock/compose.yaml
+      service: stock-publish
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # Stock Subscribe Service
+  stock-subscribe:
+    profiles: [ stock ]
+    extends:
+      file: services/stock/compose.yaml
+      service: stock-subscribe
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # Stock Database Service
+  stock-db:
+    profiles: [ stock ]
+    extends:
+      file: services/stock/compose.yaml
+      service: stock-db
+
+#  # Payment Services
+#  payment:
+#    profiles: [ payment ]
+#    extends:
+#      file: services/payment/compose.yaml
+#      service: payment-service
+#    networks:
+#      - kong-net
+#
+#  # Payment Publish Service
+#  payment-publish:
+#    profiles: [ payment ]
+#    extends:
+#      file: services/payment/compose.yaml
+#      service: payment-publish
+#    depends_on:
+#      rabbitmq:
+#        condition: service_healthy
+#
+#  # Payment Subscribe Service
+#  payment-subscribe:
+#    profiles: [ payment ]
+#    extends:
+#      file: services/payment/compose.yaml
+#      service: payment-subscribe
+#    depends_on:
+#      rabbitmq:
+#        condition: service_healthy
+#
+#  # Payment Database Service
+#  payment-db:
+#    profiles: [ payment ]
+#    extends:
+#      file: services/payment/compose.yaml
+#      service: payment-db
+
+  # RabbitMQ Service
+  rabbitmq:
+    profiles: [ rabbitmq ]
+    image: rabbitmq:3.9.29-management
+    volumes:
+      - ./rabbitmq:/etc/rabbitmq/
+    healthcheck:
+      test: [ "CMD-SHELL","rabbitmq-diagnostics -q ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+      - "61613:61613"
+volumes:
+  # Volumes for Data Storage
+  order-db-data:
+  stock-db-data:
+  payment-db-data:
+

@@ -1,0 +1,30 @@
+[
+    {
+        "model": "auth.user",
+        "pk": 1,
+        "fields": {
+            "password": "pbkdf2_sha256$720000$vNpBBZKIHVn1YGm34kmoeo$AQ7q2diNq8XFlgvkm3SQZIZw/VKQs7XsvtVWJSh1ZHQ=",
+            "last_login": "2024-02-09T21:29:46.800Z",
+            "is_superuser": true,
+            "username": "admin",
+            "first_name": "",
+            "last_name": "",
+            "email": "admin@admin.com",
+            "is_staff": true,
+            "is_active": true,
+            "date_joined": "2024-02-09T21:29:21.815Z",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "core.product",
+        "pk": 1,
+        "fields": {
+            "name": "MacBook Pro",
+            "description": "MacBook Pro M2 16GB RAM 512GB SSD",
+            "price": "2600.00",
+            "quantity": 100
+        }
+    }
+]
