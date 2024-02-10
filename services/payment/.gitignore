@@ -1,0 +1,15 @@
+# IntelliJ project files
+.idea
+
+# Ruff
+.ruff_cache
+
+# Envs
+.env
+.venv
+
+# Staticfiles
+staticfiles
+
+# Logs
+*.log
