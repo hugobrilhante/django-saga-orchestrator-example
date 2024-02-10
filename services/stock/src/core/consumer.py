@@ -3,7 +3,6 @@ import logging
 from django.db import transaction
 from django_outbox_pattern.models import Published
 from django_outbox_pattern.payloads import Payload
-from rest_framework import serializers
 
 from .models import Reservation
 from .serializers import ReservationSerializer
@@ -18,10 +17,25 @@ def create_reservation(transaction_id, data):
     logger.info("Reservation created with transaction id: %s", transaction_id)
 
 
-def delete_reservation(transaction_id):
+def cancel_reservation(transaction_id):
     reservation = Reservation.objects.get(transaction_id=transaction_id)
-    reservation.delete()
-    logger.info("Reservation deleted with transaction id: %s", transaction_id)
+    reservation.status = Reservation.CANCELLED
+    reservation.save()
+    logger.info("Reservation canceled with transaction id: %s", transaction_id)
+
+
+def confirm_reservation(transaction_id):
+    reservation = Reservation.objects.get(transaction_id=transaction_id)
+    reservation.status = Reservation.CONFIRMED
+    reservation.save()
+    logger.info("Reservation confirmed with transaction id: %s", transaction_id)
+
+
+def handle_action(func, action, *args, **kwargs):
+    try:
+        func(*args, **kwargs)
+    except Exception as exc:
+        logger.exception(f"Error {action} reservation: {exc}")
 
 
 def receiver(payload: Payload):
@@ -37,18 +51,11 @@ def receiver(payload: Payload):
         "transaction_id": transaction_id,
     }
     with transaction.atomic():
-        error = None
-        if action:
-            try:
-                create_reservation(transaction_id, data)
-            except serializers.ValidationError as exc:
-                error = str(exc)
+        if action and sender == "order":
+            handle_action(create_reservation, "create", *(transaction_id, data))
+        elif action and sender == "payment":
+            handle_action(confirm_reservation, "confirm", *(transaction_id,))
         else:
-            try:
-                delete_reservation(transaction_id)
-            except Reservation.DoesNotExist as exc:
-                error = str(exc)
-        if error is not None:
-            body.update(action=False, service=sender)
+            handle_action(cancel_reservation, "cancel", *(transaction_id,))
         Published.objects.create(destination="/exchange/saga/orchestrator", body=body)
     payload.save()

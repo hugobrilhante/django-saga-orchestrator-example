@@ -13,7 +13,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         order = serializer.save()
         data = {"amount": str(order.amount), "items": serializer.data["items"]}
         transaction_id = str(order.transaction_id)
-        orchestrator.compensate(
+        orchestrator.perform(
             data=data,
             sender="order",
             service="stock",

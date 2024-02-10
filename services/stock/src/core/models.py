@@ -12,8 +12,18 @@ class Product(models.Model):
 
 
 class Reservation(models.Model):
+    PENDING = "PENDING"
+    CONFIRMED = "CONFIRMED"
+    CANCELLED = "CANCELLED"
+    STATUS_CHOICES = (
+        (PENDING, "Pending"),
+        (CONFIRMED, "Confirmed"),
+        (CANCELLED, "Cancelled"),
+    )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     created = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    modified = models.DateTimeField(auto_now=True)
     transaction_id = models.CharField(max_length=100)
 
     def __str__(self):
