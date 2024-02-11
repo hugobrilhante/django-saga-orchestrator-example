@@ -6,40 +6,21 @@ from django_outbox_pattern.models import Published
 from django_outbox_pattern.payloads import Payload
 
 from .interfaces import ActionAbstract
-from .interfaces import CompensationAbstract
 from .interfaces import PublisherAbstract
 
 
-class OperationMixin:
-    def __init__(self, destination: str, action: bool):
-        self.destination = destination
+class Action(ActionAbstract):
+    def __init__(self, action: str, destination: str):
         self.action = action
+        self.destination = destination
 
-    def execute(self, data: Any, sender: str, transaction_id: str) -> Tuple[Dict[str, Any], str]:
+    def execute(self, data: Any, transaction_id: str) -> Tuple[Dict[str, Any], str]:
         body = {
             'action': self.action,
             'data': data,
-            'sender': sender,
             'transaction_id': transaction_id,
         }
         return body, self.destination
-
-
-class Action(ActionAbstract, OperationMixin):
-    def __init__(self, destination: str):
-        super().__init__(destination, action=True)
-
-    def perform(self, data: Any, sender: str, transaction_id: str) -> Tuple[Dict[str, Any], str]:
-        print('Sender by:', sender)
-        return self.execute(data, sender, transaction_id)
-
-
-class Compensation(CompensationAbstract, OperationMixin):
-    def __init__(self, destination: str):
-        super().__init__(destination, action=False)
-
-    def compensate(self, data: Any, sender: str, transaction_id: str) -> Tuple[Dict[str, Any], str]:
-        return self.execute(data, sender, transaction_id)
 
 
 class Publisher(PublisherAbstract):
@@ -51,7 +32,6 @@ class Orchestrator:
     def __init__(self, publisher: PublisherAbstract):
         self.publisher = publisher
         self.actions: Dict[str, Action] = {}
-        self.compensations: Dict[str, Compensation] = {}
 
     def __call__(self, payload: Payload) -> None:
         self._receiver(payload.body)
@@ -63,38 +43,38 @@ class Orchestrator:
     def _receiver(self, body: dict) -> None:
         action = body.get('action')
         data = body.get('data')
-        service = body.get('service')
-        sender = body.get('sender')
         transaction_id = body.get('transaction_id')
-        if action:
-            self.perform(data, sender, service, transaction_id)
-        else:
-            self.compensate(data, sender, service, transaction_id)
+        self.execute(action, data, transaction_id)
 
-    def perform(self, data: dict, sender: str, service: str, transaction_id: str) -> None:
-        body, destination = self.actions[service].perform(data, sender, transaction_id)
+    def execute(self, action: str, data: dict, transaction_id: str) -> None:
+        body, destination = self.actions[action].execute(data, transaction_id)
         self._sender(destination, body)
 
-    def compensate(self, data: dict, sender: str, service: str, transaction_id: str) -> None:
-        body, destination = self.compensations[service].compensate(data, sender, transaction_id)
-        self._sender(destination, body)
-
-    def register_action(self, service: str, action: Action) -> None:
-        self.actions[service] = action
-
-    def register_compensation(self, service: str, compensation: Compensation) -> None:
-        self.compensations[service] = compensation
+    def register_action(self, action: str, instance: Action) -> None:
+        self.actions[action] = instance
 
 
-orchestrator = Orchestrator(Publisher())
+class OrchestratorConfigurator:
+    ORDER_DESTINATION = '/exchange/saga/order'
+    STOCK_DESTINATION = '/exchange/saga/stock'
+    PAYMENT_DESTINATION = '/exchange/saga/payment'
+    DELIVERY_DESTINATION = '/exchange/saga/delivery'
 
-steps = {
-    'order': '/exchange/saga/order',
-    'stock': '/exchange/saga/stock',
-    'payment': '/exchange/saga/payment',
-    'delivery': '/exchange/saga/delivery',
-}
+    stages = {
+        ORDER_DESTINATION: ['create_order', 'process_order', 'delivery_order'],
+        STOCK_DESTINATION: ['create_reservation', 'confirm_reservation', 'cancel_reservation'],
+        PAYMENT_DESTINATION: ['create_payment'],
+        DELIVERY_DESTINATION: ['create_delivery'],
+    }
 
-for key, value in steps.items():
-    orchestrator.register_action(key, Action(value))
-    orchestrator.register_compensation(key, Compensation(value))
+    def __init__(self) -> None:
+        self.orchestrator = Orchestrator(Publisher())
+        for destination, actions in self.stages.items():
+            for action in actions:
+                self.orchestrator.register_action(action, Action(action, destination))
+
+    def get_orchestrator(self) -> Orchestrator:
+        return self.orchestrator
+
+
+orchestrator = OrchestratorConfigurator().get_orchestrator()

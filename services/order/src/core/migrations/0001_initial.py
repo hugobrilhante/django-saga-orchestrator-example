@@ -32,13 +32,11 @@ class Migration(migrations.Migration):
                     'status',
                     models.CharField(
                         choices=[
-                            ('PENDING', 'Pending'),
                             ('PROCESSING', 'Processing'),
-                            ('SHIPPED', 'Shipped'),
                             ('DELIVERED', 'Delivered'),
                             ('CANCELLED', 'Cancelled'),
                         ],
-                        default='PENDING',
+                        default='PROCESSING',
                         max_length=20,
                     ),
                 ),

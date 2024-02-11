@@ -5,9 +5,7 @@ from django.db import models
 
 class Order(models.Model):
     STATUS_CHOICES = (
-        ('PENDING', 'Pending'),
         ('PROCESSING', 'Processing'),
-        ('SHIPPED', 'Shipped'),
         ('DELIVERED', 'Delivered'),
         ('CANCELLED', 'Cancelled'),
     )
@@ -15,7 +13,7 @@ class Order(models.Model):
     customer_id = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PROCESSING')
     transaction_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     def __str__(self):

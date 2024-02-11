@@ -41,21 +41,19 @@ def handle_action(func, action, *args, **kwargs):
 def receiver(payload: Payload):
     action = payload.body['action']
     data = payload.body['data']
-    sender = payload.body['sender']
     transaction_id = payload.body['transaction_id']
     body = {
-        'action': action,
+        'action': 'create_payment',
         'data': data,
         'sender': 'stock',
-        'service': 'payment',
         'transaction_id': transaction_id,
     }
     with transaction.atomic():
-        if action and sender == 'order':
+        if action == 'create_reservation':
             handle_action(create_reservation, 'create', *(transaction_id, data))
-        elif action and sender == 'payment':
+        elif action == 'confirm_reservation':
             handle_action(confirm_reservation, 'confirm', *(transaction_id,))
-        else:
+        elif action == 'cancel_reservation':
             handle_action(cancel_reservation, 'cancel', *(transaction_id,))
         Published.objects.create(destination='/exchange/saga/orchestrator', body=body)
     payload.save()

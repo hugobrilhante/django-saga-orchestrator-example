@@ -1,7 +1,6 @@
 from unittest import mock
 
 from django.test import TestCase
-from django_outbox_pattern.payloads import Payload
 
 from src.core.consumer import cancel_reservation
 from src.core.consumer import confirm_reservation
@@ -14,20 +13,15 @@ class TestConsumer(TestCase):
     def setUp(self):
         self.transaction_id = 'transaction_id'
         self.data = {'key': 'value'}
-        self.payload = Payload(
-            connection=mock.MagicMock(),
-            body=None,
-            headers=None,
-            message=mock.MagicMock(),
-        )
+        self.payload = mock.MagicMock()
         self.payload.body = {
-            'action': True,
             'data': self.data,
             'sender': 'order',
             'transaction_id': self.transaction_id,
         }
 
     def test_create_reservation(self):
+        self.payload.body['action'] = 'create_reservation'
         with mock.patch('src.core.consumer.ReservationSerializer') as mock_serializer:
             with mock.patch('src.core.consumer.logger') as mock_logger:
                 create_reservation(self.transaction_id, self.data)
@@ -39,6 +33,7 @@ class TestConsumer(TestCase):
                 )
 
     def test_cancel_reservation(self):
+        self.payload.body['action'] = 'cancel_reservation'
         with mock.patch('src.core.consumer.Reservation.objects.get') as mock_get:
             with mock.patch('src.core.consumer.logger') as mock_logger:
                 mock_reservation = mock.Mock()
@@ -50,6 +45,7 @@ class TestConsumer(TestCase):
                 )
 
     def test_confirm_reservation(self):
+        self.payload.body['action'] = 'confirm_reservation'
         with mock.patch('src.core.consumer.Reservation.objects.get') as mock_get:
             with mock.patch('src.core.consumer.logger') as mock_logger:
                 mock_reservation = mock.Mock()
@@ -77,27 +73,28 @@ class TestConsumer(TestCase):
             mock_logger.exception.assert_called_once_with(f'Error {action} reservation: {exec_msg}')
 
     @mock.patch('src.core.consumer.Published.objects.create')
-    def test_receiver_order_sender(self, mock_published_create):
+    def test_receiver_create_reservation(self, mock_published_create):
         mock_create_reservation = mock.MagicMock()
         with mock.patch('src.core.consumer.create_reservation', mock_create_reservation):
+            self.payload.body['action'] = 'create_reservation'
             receiver(self.payload)
             mock_create_reservation.assert_called_once_with(self.transaction_id, self.data)
             self.assertTrue(mock_published_create.called)
 
     @mock.patch('src.core.consumer.Published.objects.create')
-    def test_receiver_payment_sender(self, mock_published_create):
+    def test_receiver_cancel_reservation(self, mock_published_create):
         mock_confirm_reservation = mock.MagicMock()
-        with mock.patch('src.core.consumer.confirm_reservation', mock_confirm_reservation):
-            self.payload.body['sender'] = 'payment'
+        with mock.patch('src.core.consumer.cancel_reservation', mock_confirm_reservation):
+            self.payload.body['action'] = 'cancel_reservation'
             receiver(self.payload)
             mock_confirm_reservation.assert_called_once_with(self.transaction_id)
             self.assertTrue(mock_published_create.called)
 
     @mock.patch('src.core.consumer.Published.objects.create')
-    def test_receiver_compensate(self, mock_published_create):
+    def test_receiver_confirm_reservation(self, mock_published_create):
         mock_cancel_reservation = mock.MagicMock()
-        with mock.patch('src.core.consumer.cancel_reservation', mock_cancel_reservation):
-            self.payload.body['action'] = False
+        with mock.patch('src.core.consumer.confirm_reservation', mock_cancel_reservation):
+            self.payload.body['action'] = 'confirm_reservation'
             receiver(self.payload)
             mock_cancel_reservation.assert_called_once_with(self.transaction_id)
             self.assertTrue(mock_published_create.called)

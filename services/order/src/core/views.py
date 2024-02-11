@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import viewsets
 
 from .models import Order
@@ -10,12 +11,12 @@ class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer
 
     def perform_create(self, serializer):
-        order = serializer.save()
-        data = {'amount': str(order.amount), 'items': serializer.data['items']}
-        transaction_id = str(order.transaction_id)
-        orchestrator.perform(
-            data=data,
-            sender='order',
-            service='stock',
-            transaction_id=transaction_id,
-        )
+        with transaction.atomic():
+            order = serializer.save()
+            data = {'amount': str(order.amount), 'items': serializer.data['items']}
+            transaction_id = str(order.transaction_id)
+            orchestrator.execute(
+                action='create_reservation',
+                data=data,
+                transaction_id=transaction_id,
+            )
