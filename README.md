@@ -1,5 +1,7 @@
 # Microservices
-This repository aims to improve my knowledge in microservices. Implements orchestration-based sagas
+This repository aims to implements orchestration-based sagas
+
+![saga-orchestration](/Users/hugobrilhante/Developer/Repos/microservices/docs/saga-orchestration.png)
 
 
 # References:
