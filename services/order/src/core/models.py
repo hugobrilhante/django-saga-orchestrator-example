@@ -4,16 +4,18 @@ from django.db import models
 
 
 class Order(models.Model):
+    CANCELLED = 'CANCELLED'
+    DELIVERED = 'DELIVERED'
+    PROCESSING = 'PROCESSING'
     STATUS_CHOICES = (
-        ('PROCESSING', 'Processing'),
-        ('DELIVERED', 'Delivered'),
         ('CANCELLED', 'Cancelled'),
+        ('DELIVERED', 'Delivered'),
+        ('PROCESSING', 'Processing'),
     )
-
     customer_id = models.IntegerField()
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PROCESSING')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PROCESSING)
     transaction_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     def __str__(self):
