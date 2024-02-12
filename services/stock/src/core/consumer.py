@@ -9,33 +9,39 @@ from .serializers import ReservationSerializer
 
 logger = logging.getLogger(__name__)
 
+FAILED = 'FAILED'
+SUCCESS = 'SUCCESS'
+
 
 def create_reservation(transaction_id, data):
     serializer = ReservationSerializer(data={'transaction_id': transaction_id, **data})
     serializer.is_valid(raise_exception=True)
     serializer.save()
-    logger.info('Reservation created with transaction id: %s', transaction_id)
+    logger.info(f'Reservation created with transaction id: {transaction_id}')
 
 
 def cancel_reservation(transaction_id):
     reservation = Reservation.objects.get(transaction_id=transaction_id)
     reservation.status = Reservation.CANCELLED
     reservation.save()
-    logger.info('Reservation canceled with transaction id: %s', transaction_id)
+    logger.info(f'Reservation canceled with transaction id: {transaction_id}')
 
 
 def confirm_reservation(transaction_id):
     reservation = Reservation.objects.get(transaction_id=transaction_id)
     reservation.status = Reservation.CONFIRMED
     reservation.save()
-    logger.info('Reservation confirmed with transaction id: %s', transaction_id)
+    logger.info(f'Reservation confirmed with transaction id: {transaction_id}')
 
 
 def handle_action(func, action, *args, **kwargs):
+    status = SUCCESS
     try:
         func(*args, **kwargs)
     except Exception as exc:
         logger.exception(f'Error {action} reservation: {exc}')
+        status = FAILED
+    return status
 
 
 def receiver(payload: Payload):
@@ -43,17 +49,17 @@ def receiver(payload: Payload):
     data = payload.body['data']
     transaction_id = payload.body['transaction_id']
     body = {
-        'action': 'create_payment',
         'data': data,
-        'sender': 'stock',
+        'service': 'stock',
         'transaction_id': transaction_id,
     }
     with transaction.atomic():
         if action == 'create_reservation':
-            handle_action(create_reservation, 'create', *(transaction_id, data))
+            status = handle_action(create_reservation, 'create', *(transaction_id, data))
         elif action == 'confirm_reservation':
-            handle_action(confirm_reservation, 'confirm', *(transaction_id,))
+            status = handle_action(confirm_reservation, 'confirm', *(transaction_id,))
         elif action == 'cancel_reservation':
-            handle_action(cancel_reservation, 'cancel', *(transaction_id,))
+            status = handle_action(cancel_reservation, 'cancel', *(transaction_id,))
+        body.update(status=status)
         Published.objects.create(destination='/exchange/saga/orchestrator', body=body)
     payload.save()

@@ -22,10 +22,21 @@ services:
     depends_on:
       order-db:
         condition: service_healthy
-  order-subscribe:
+  order-orchestrator:
     build:
       context: .
     command: [ "python", "manage.py", "subscribe", "src.core.orchestrator.orchestrator", "/exchange/saga/orchestrator", "orchestrator" ]
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      order-db:
+        condition: service_healthy
+  order-subscribe:
+    build:
+      context: .
+    command: [ "python", "manage.py", "subscribe", "src.core.consumer.receiver", "/exchange/saga/order", "order" ]
     volumes:
       - .:/app
     env_file:

@@ -5,6 +5,8 @@ from .models import OrderItem
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    price = serializers.CharField()
+
     class Meta:
         model = OrderItem
         fields = ['product', 'quantity', 'price']
@@ -12,6 +14,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
+    amount = serializers.CharField(read_only=True)
 
     class Meta:
         model = Order
@@ -24,6 +27,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'modified',
             'items',
         ]
+        extra_kwargs = {'transaction_id': {'required': False}}
 
     def validate_items(self, value):
         if not value:

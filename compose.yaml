@@ -18,7 +18,17 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  # Order Subscribe Service
+# Order Orchestrator Service
+  order-orchestrator:
+    profiles: [ order ]
+    extends:
+      file: services/order/compose.yaml
+      service: order-orchestrator
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+# Order Subscribe Service
   order-subscribe:
     profiles: [ order ]
     extends:
