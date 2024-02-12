@@ -18,7 +18,7 @@ class ReservationItemInline(admin.TabularInline):
 
 @admin.register(Reservation)
 class ReservationAdmin(admin.ModelAdmin):
-    list_display = ['transaction_id', 'created']
+    list_display = ['transaction_id', 'status', 'created', 'modified']
     search_fields = ['transaction_id']
     readonly_fields = ['transaction_id', 'created', 'modified']
     inlines = [ReservationItemInline]

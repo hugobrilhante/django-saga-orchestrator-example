@@ -12,7 +12,7 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['transaction_id', 'customer_id', 'created', 'modified', 'status']
+    list_display = ['transaction_id', 'customer_id', 'status', 'created', 'modified']
     list_filter = ['status']
     search_fields = ['id', 'customer_id']
     readonly_fields = ['created', 'modified', 'transaction_id']
