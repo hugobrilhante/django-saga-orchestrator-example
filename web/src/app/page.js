@@ -148,11 +148,7 @@ export default function Home() {
                             nodes={nodes}
                             edges={edges}
                         >
-                            <Stack direction="horizontal" gap={2} style={{
-                                position: 'absolute',
-                                left: 1000,
-                                bottom: 0,
-                            }}>
+                            <Stack className={"stack"} direction="horizontal" gap={2}>
                                 <h4>
                                     <Badge bg="secondary" text="dark">Waiting</Badge>
                                 </h4>

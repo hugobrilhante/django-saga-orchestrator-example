@@ -1,6 +1,6 @@
 .microservice {
     background-color: gray;
-    margin-right: 0.1em;
+    margin-right: 0.2em;
     align-content: center;
     text-align: center;
 }
@@ -22,8 +22,14 @@
     padding: 10px;
 }
 
-.logs{
+.logs {
     background-color: grey;
     margin-left: 1px;
     padding: 10px;
+}
+
+.stack {
+    position: absolute;
+    left: 1000px;
+    bottom: 0;
 }
