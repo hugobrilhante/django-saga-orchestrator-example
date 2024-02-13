@@ -34,7 +34,7 @@ def delivery_order(transaction_id):
     order = Order.objects.get(transaction_id=transaction_id)
     order.status = Order.DELIVERED
     order.save()
-    logger.info(f'Order canceled with transaction id: {transaction_id}')
+    logger.info(f'Order delivered with transaction id: {transaction_id}')
     return STOPPED
 
 

@@ -1,32 +1,72 @@
 from unittest.mock import MagicMock
+from unittest.mock import call
+from unittest.mock import patch
 
 from django.test import TestCase
 
+from src.core.orchestrator import FAILED
+from src.core.orchestrator import STOPPED
+from src.core.orchestrator import SUCCESS
 from src.core.orchestrator import Action
 from src.core.orchestrator import Orchestrator
 
 
 class TestOrchestrator(TestCase):
     def setUp(self):
-        self.publisher_mock = MagicMock()
-        self.orchestrator = Orchestrator(self.publisher_mock)
-        self.payload = MagicMock()
+        publisher = MagicMock()
+        self.orchestrator = Orchestrator(publisher)
 
-    def test_perform_action(self):
-        action = Action('test_action', 'destination_of_action')
-        action.execute = MagicMock(return_value=({'key': 'value'}, 'destination_of_action'))
-        self.orchestrator.register_action('test_action', action)
+    @patch('src.core.orchestrator.logger')
+    def test_when_success(self, mock_logger):
+        action_name = 'test_action'
+        action = Action(action=action_name, destination='test_destination')
+        action.execute = MagicMock(return_value=({}, 'test_destination'))
+        self.orchestrator.register_steps([action_name])
+        self.orchestrator.register_action(action_name, action)
+        self.orchestrator.execute({}, 'transaction_id', 'test', SUCCESS)
+        action.execute.assert_called_once_with({}, 'transaction_id')
+        calls = [
+            call("Next steps: ['test_action']"),
+            call('Action in execution: test_action'),
+            call(f'Sending {{}} to test_destination with status: {SUCCESS}'),
+        ]
+        mock_logger.debug.assert_has_calls(calls)
 
-        self.payload.body = {
-            'action': 'test_action',
-            'data': {'key': 'value'},
+    @patch('src.core.orchestrator.logger')
+    def test_when_failed(self, mock_logger):
+        action_name = 'test_compensation'
+        action = Action(action=action_name, destination='test_destination')
+        action.execute = MagicMock(return_value=({}, 'test_destination'))
+        self.orchestrator.register_steps([action_name])
+        self.orchestrator.register_compensation('test_service', action)
+        self.orchestrator.execute({}, 'transaction_id', 'test_service', FAILED)
+        action.execute.assert_called_once_with({}, 'transaction_id')
+        calls = [
+            call("Next steps: ['test_compensation']"),
+            call('Compensation in execution: test_compensation'),
+            call(f'Sending {{}} to test_destination with status: {FAILED}'),
+        ]
+        mock_logger.debug.assert_has_calls(calls)
+
+    @patch('src.core.orchestrator.logger')
+    def test_when_stopped(self, mock_logger):
+        action_name = 'test_action'
+        action = Action(action=action_name, destination='test_destination')
+        action.execute = MagicMock(return_value=({}, 'test_destination'))
+        self.orchestrator.register_steps([action_name])
+        self.orchestrator.register_action(action_name, action)
+        self.orchestrator.execute({}, 'transaction_id', 'test', STOPPED)
+        action.execute.assert_not_called()
+        mock_logger.info.assert_called_once_with('Transaction concluded with transaction id: transaction_id')
+
+    def test_receiver(self):
+        payload = MagicMock()
+        payload.body = {
+            'data': [],
+            'status': SUCCESS,
             'service': 'test_service',
-            'sender': 'test_sender',
-            'transaction_id': '12345',
+            'transaction_id': 'test_transaction_id',
         }
-
-        self.orchestrator(self.payload)
-
-        action.execute.assert_called_once_with({'key': 'value'}, '12345')
-
-        self.publisher_mock.send.assert_called_once_with('destination_of_action', {'key': 'value'})
+        self.orchestrator.execute = MagicMock()
+        self.orchestrator(payload)
+        self.orchestrator.execute.assert_called_once_with([], 'test_transaction_id', 'test_service', SUCCESS)

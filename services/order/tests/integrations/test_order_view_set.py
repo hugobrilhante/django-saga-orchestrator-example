@@ -20,7 +20,7 @@ class OrderIntegrationTest(TestCase):
             ],
         }
 
-        with patch('src.core.views.orchestrator.execute') as mock_execute:
+        with patch('src.core.views.Published.objects.create') as mock_create:
             response = self.client.post('/order/api/v1/orders/', data=order_data, format='json')
 
         self.assertEqual(response.status_code, 201)
@@ -38,8 +38,10 @@ class OrderIntegrationTest(TestCase):
         self.assertEqual(order_items[1].quantity, 1)
         self.assertEqual(order_items[1].price, 20.0)
 
-        mock_execute.assert_called_once_with(
-            action='create_reservation',
-            data={'amount': str(order.amount), 'items': response.data['items']},
-            transaction_id=str(order.transaction_id),
-        )
+        body = {
+            'data': response.data,
+            'transaction_id': str(order.transaction_id),
+            'service': 'order',
+            'status': 'SUCCESS',
+        }
+        mock_create.assert_called_once_with(destination='/exchange/saga/orchestrator', body=body)
