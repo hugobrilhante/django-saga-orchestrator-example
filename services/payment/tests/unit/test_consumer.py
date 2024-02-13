@@ -27,7 +27,7 @@ class TestConsumer(TestCase):
                 mock_serializer.assert_called_once_with(data={'transaction_id': self.transaction_id, **self.data})
                 mock_serializer.return_value.is_valid.assert_called_once()
                 mock_serializer.return_value.save.assert_called_once()
-                mock_logger.info.assert_called_once_with('Payment created with transaction id: %s', self.transaction_id)
+                mock_logger.info.assert_called_once_with(f'Payment created with transaction id: {self.transaction_id}')
 
     def test_cancel_payment(self):
         self.payload.body['action'] = 'cancel_payment'
@@ -37,9 +37,7 @@ class TestConsumer(TestCase):
                 mock_get.return_value = mock_payment
                 cancel_payment(self.transaction_id)
                 mock_payment.save.assert_called_once()
-                mock_logger.info.assert_called_once_with(
-                    'Payment canceled with transaction id: %s', self.transaction_id
-                )
+                mock_logger.info.assert_called_once_with(f'Payment canceled with transaction id: {self.transaction_id}')
 
     def test_handle_action(self):
         mock_func = mock.MagicMock()
