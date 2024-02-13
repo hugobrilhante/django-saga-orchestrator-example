@@ -29,7 +29,7 @@ class TestConsumer(TestCase):
                 mock_serializer.return_value.is_valid.assert_called_once()
                 mock_serializer.return_value.save.assert_called_once()
                 mock_logger.info.assert_called_once_with(
-                    'Reservation created with transaction id: %s', self.transaction_id
+                    f'Reservation created with transaction id: {self.transaction_id}'
                 )
 
     def test_cancel_reservation(self):
@@ -41,7 +41,7 @@ class TestConsumer(TestCase):
                 cancel_reservation(self.transaction_id)
                 mock_reservation.save.assert_called_once()
                 mock_logger.info.assert_called_once_with(
-                    'Reservation canceled with transaction id: %s', self.transaction_id
+                    f'Reservation canceled with transaction id: {self.transaction_id}'
                 )
 
     def test_confirm_reservation(self):
@@ -53,7 +53,7 @@ class TestConsumer(TestCase):
                 confirm_reservation(self.transaction_id)
                 mock_reservation.save.assert_called_once()
                 mock_logger.info.assert_called_once_with(
-                    'Reservation confirmed with transaction id: %s', self.transaction_id
+                    f'Reservation confirmed with transaction id: {self.transaction_id}'
                 )
 
     def test_handle_action(self):
