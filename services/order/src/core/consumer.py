@@ -63,6 +63,6 @@ def receiver(payload: Payload):
             status = handle_action(cancel_order, 'cancel', *(transaction_id,))
         elif action == 'delivery_order':
             status = handle_action(delivery_order, 'delivery', *(transaction_id,))
-        body.update(status=status)
+        body.update({'status': status})
         Published.objects.create(destination='/exchange/saga/orchestrator', body=body)
     payload.save()

@@ -34,8 +34,7 @@ def confirm_reservation(transaction_id):
     logger.info(f'Reservation confirmed with transaction id: {transaction_id}')
 
 
-def handle_action(func, action, *args, **kwargs):
-    status = SUCCESS
+def handle_action(func, action, status, *args, **kwargs):
     try:
         func(*args, **kwargs)
     except Exception as exc:
@@ -47,6 +46,7 @@ def handle_action(func, action, *args, **kwargs):
 def receiver(payload: Payload):
     action = payload.body['action']
     data = payload.body['data']
+    status = payload.body['status']
     transaction_id = payload.body['transaction_id']
     body = {
         'data': data,
@@ -55,11 +55,11 @@ def receiver(payload: Payload):
     }
     with transaction.atomic():
         if action == 'create_reservation':
-            status = handle_action(create_reservation, 'create', *(transaction_id, data))
+            status = handle_action(create_reservation, 'create', status, *(transaction_id, data))
         elif action == 'confirm_reservation':
-            status = handle_action(confirm_reservation, 'confirm', *(transaction_id,))
+            status = handle_action(confirm_reservation, 'confirm', status, *(transaction_id,))
         elif action == 'cancel_reservation':
-            status = handle_action(cancel_reservation, 'cancel', *(transaction_id,))
-        body.update(status=status)
+            status = handle_action(cancel_reservation, 'cancel', status, *(transaction_id,))
+        body.update({'status': status})
         Published.objects.create(destination='/exchange/saga/orchestrator', body=body)
     payload.save()

@@ -28,8 +28,7 @@ def cancel_payment(transaction_id):
     logger.info(f'Payment canceled with transaction id: {transaction_id}')
 
 
-def handle_action(func, action, *args, **kwargs):
-    status = SUCCESS
+def handle_action(func, action, status, *args, **kwargs):
     try:
         func(*args, **kwargs)
     except Exception as exc:
@@ -41,6 +40,7 @@ def handle_action(func, action, *args, **kwargs):
 def receiver(payload: Payload):
     action = payload.body['action']
     data = payload.body['data']
+    status = payload.body['status']
     transaction_id = payload.body['transaction_id']
     body = {
         'data': data,
@@ -49,9 +49,9 @@ def receiver(payload: Payload):
     }
     with transaction.atomic():
         if action == 'create_payment':
-            status = handle_action(create_payment, 'create', *(transaction_id, data))
+            status = handle_action(create_payment, 'create', status, *(transaction_id, data))
         elif action == 'cancel_payment':
-            status = handle_action(cancel_payment, 'cancel', *(transaction_id,))
-        body.update(status=status)
+            status = handle_action(cancel_payment, 'cancel', status, *(transaction_id,))
+        body.update({'status': status})
         Published.objects.create(destination='/exchange/saga/orchestrator', body=body)
     payload.save()

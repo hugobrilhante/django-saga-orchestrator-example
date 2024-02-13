@@ -83,6 +83,7 @@ class Orchestrator:
             logger.info(f'Transaction concluded with transaction id: {transaction_id}')
         if status in [SUCCESS, FAILED]:
             logger.debug(f'Sending {body} to {destination} with status: {status}')
+            body.update(status=status)
             self._sender(destination, body)
 
     def register_action(self, action: str, instance: Action) -> None:
