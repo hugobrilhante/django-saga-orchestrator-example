@@ -68,7 +68,7 @@ run_all() {
 
 # Usage instructions
 usage() {
-    echo "Usage: $0 {migrations|data|rabbitmq|exchange|services|stop_services|all}"
+    echo "Usage: $0 {migrations|data|rabbitmq|exchange|services|stop|start}"
     echo "  migrations: Run database migrations for order, stock, and payment"
     echo "  data: Load data into the database for order, stock, and payment"
     echo "  rabbitmq: Start RabbitMQ service"
