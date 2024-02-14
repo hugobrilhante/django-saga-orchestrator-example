@@ -26,20 +26,20 @@ function generateNodes(flowId) {
   // Atribuir cores com base no fluxo especificado
   switch (flowId) {
     case 1:
-      colors = ['#198754', '#198754', '#198754', '#198754'];
+      colors = ['#198754', '#198754', '#198754'];
       break;
     case 2:
-      colors = ['#198754', '#198754', '#dc3545', '#ffc107'];
+      colors = ['#198754', '#198754', '#dc3545'];
       break;
     case 3:
-      colors = ['#198754', '#dc3545', '#ffc107', '#ffc107'];
+      colors = ['#198754', '#dc3545', '#ffc107'];
       break;
     default:
-      colors = ['gray', 'gray', 'gray', 'gray'];
+      colors = ['gray', 'gray', 'gray'];
       break;
   }
 
-  const labels = ['Order', 'Stock', 'Payment', 'Delivery'];
+  const labels = ['Order', 'Stock', 'Payment'];
   const initialNodes = [];
 
   // Gerar os nós com os nomes atribuídos e cores correspondentes
@@ -47,10 +47,10 @@ function generateNodes(flowId) {
     const nodeId = (i + 1).toString();
     const node = {
       id: nodeId,
-      position: {x: 600 + i * 400, y: 300},
+      position: {x: 100 + i * 300, y: 75},
       data: {label: labels[i]}, // Adicionando o atributo oldLabel com o valor original de label
       style: {...style, background: colors[i]},
-      type: nodeId === '1' ? 'input' : 'default',
+      type: nodeId === '1' ?  'input' : nodeId === '3' ?  'output' : 'default',
       sourcePosition: 'right',
       targetPosition: 'left'
     };
