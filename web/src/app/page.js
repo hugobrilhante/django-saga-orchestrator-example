@@ -189,7 +189,7 @@ export default function Home() {
                             className="rounded-2xl bg-gray-50 py-10 text-center ring-1 ring-inset ring-gray-900/5 lg:flex lg:flex-col lg:justify-center lg:py-16">
                             <h1 className="font-semibold text-gray-600">Store</h1>
                             <div className="mx-auto max-w-xs px-8">
-                                <Image src={"/macbook.jpeg"} alt="MacBook Pro" width={300} height={300}/>
+                                <Image src={"/macbook.png"} alt="MacBook Pro" width={300} height={300}/>
                                 <p className="text-base font-semibold text-gray-600">MacBook Pro 14</p>
                                 <p className="mt-6 flex items-baseline justify-center gap-x-2">
                                     <span
