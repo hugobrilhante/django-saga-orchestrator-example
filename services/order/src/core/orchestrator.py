@@ -1,7 +1,9 @@
 import logging
+from time import sleep
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 from django_outbox_pattern.models import Published
@@ -9,12 +11,13 @@ from django_outbox_pattern.payloads import Payload
 
 from .interfaces import ActionAbstract
 from .interfaces import PublisherAbstract
+from .models import Transaction
 
 logger = logging.getLogger(__name__)
 
 FAILED = 'FAILED'
 SUCCESS = 'SUCCESS'
-STOPPED = 'STOPPED'
+ROLL_BACK = 'ROLL_BACK'
 
 
 class Action(ActionAbstract):
@@ -42,6 +45,7 @@ class Orchestrator:
         self.compensations: Dict[str, Action] = {}
         self.publisher = publisher
         self.steps: List[str] = []
+        self.transactions: Dict[str, Transaction] = {}
         self.transactions_steps: Dict[str, List] = {}
 
     def __call__(self, payload: Payload) -> None:
@@ -49,9 +53,12 @@ class Orchestrator:
         payload.save()
 
     def _get_action(self, transaction_id: str) -> Action:
-        action = self.transactions_steps[transaction_id].pop(0)
-        logger.debug(f'Action in execution: {action}')
-        return self.actions[action]
+        try:
+            action = self.transactions_steps[transaction_id].pop(0)
+            logger.debug(f'Action in execution: {action}')
+            return self.actions[action]
+        except IndexError:
+            return Action(action='stop_saga', destination='')
 
     def _get_compensate(self, service: str) -> Action:
         compensation = self.compensations[service]
@@ -60,6 +67,7 @@ class Orchestrator:
 
     def _start_transaction(self, transaction_id: str) -> None:
         if transaction_id not in self.transactions_steps:
+            self.transactions[transaction_id] = Transaction.objects.create(transaction_id=transaction_id)
             self.transactions_steps[transaction_id] = self.steps.copy()
         logger.debug(f'Next steps: {self.transactions_steps[transaction_id]}')
 
@@ -68,20 +76,31 @@ class Orchestrator:
 
     def _receiver(self, body: dict) -> None:
         data = body.get('data')
+        errors = body.get('errors')
         status = body.get('status')
         service = body.get('service')
         transaction_id = body.get('transaction_id')
-        self.execute(data, transaction_id, service, status)
+        self.execute(data, transaction_id, service, status, errors)
 
-    def execute(self, data: dict, transaction_id: str, service: str, status: str) -> None:
+    def execute(self, data: dict, transaction_id: str, service: str, status: str, errors: str) -> None:
         self._start_transaction(transaction_id)
+        body = None
+        destination = None
+        action = self._get_action(transaction_id)
+        compensate = self._get_compensate(service)
         if status == SUCCESS:
-            body, destination = self._get_action(transaction_id).execute(data, transaction_id)
+            body, destination = action.execute(data, transaction_id)
+            self._update_transaction(transaction_id, service, '#198754', 0.5)
         elif status == FAILED:
-            body, destination = self._get_compensate(service).execute(data, transaction_id)
-        elif status == STOPPED:
+            body, destination = compensate.execute(data, transaction_id)
+            logs = {service: f'Error on transaction id {transaction_id}: {errors}'}
+            self._update_transaction(transaction_id, service, '#DC3545', 0.5, logs)
+        elif status == ROLL_BACK:
+            body, destination = compensate.execute(data, transaction_id)
+            self._update_transaction(transaction_id, service, '#FFC107', 0.5)
+        if not destination:
             logger.info(f'Transaction concluded with transaction id: {transaction_id}')
-        if status in [SUCCESS, FAILED]:
+        else:
             logger.debug(f'Sending {body} to {destination} with status: {status}')
             body.update(status=status)
             self._sender(destination, body)
@@ -95,6 +114,18 @@ class Orchestrator:
     def register_steps(self, steps: List[str]) -> None:
         self.steps = steps
 
+    def _update_transaction(
+        self, transaction_id: str, service: str, color: str, delay: float = 0, logs: Optional[Dict] = None
+    ) -> None:
+        sleep(delay)
+        transaction = self.transactions[transaction_id]
+        for node in transaction.nodes:
+            if node['data']['label'] == service:
+                node['style']['background'] = color
+                self.transactions[transaction_id].nodes = transaction.nodes
+        transaction.logs = logs
+        transaction.save()
+
 
 class OrchestratorConfigurator:
     saga = {
@@ -102,7 +133,7 @@ class OrchestratorConfigurator:
         'order': {
             'destination': '/exchange/saga/order',
             'actions': ['create_order', 'delivery_order'],
-            'compensation': {'action': '', 'destination': ''},
+            'compensation': {'action': None, 'destination': None},
         },
         'stock': {
             'destination': '/exchange/saga/stock',

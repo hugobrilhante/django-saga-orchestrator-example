@@ -14,6 +14,7 @@ class TestConsumer(TestCase):
         self.data = {'key': 'value'}
         self.payload = mock.MagicMock()
         self.payload.body = {
+            'status': 'SUCCESS',
             'data': self.data,
             'sender': 'order',
             'transaction_id': self.transaction_id,
@@ -45,14 +46,14 @@ class TestConsumer(TestCase):
         args = ('arg1',)
         kwargs = {'key': 'value'}
         with mock.patch('src.core.consumer.logger') as mock_logger:
-            handle_action(mock_func, action, *args, **kwargs)
+            handle_action(mock_func, action, 'SUCCESS', *args, **kwargs)
             mock_func.assert_called_once_with(*args, **kwargs)
             mock_logger.exception.assert_not_called()
 
             # Test when an exception is raised
             exec_msg = 'Test Exception'
             mock_func.side_effect = Exception(exec_msg)
-            handle_action(mock_func, action, *args, **kwargs)
+            handle_action(mock_func, action, 'SUCCESS', *args, **kwargs)
             mock_logger.exception.assert_called_once_with(f'Error {action} payment: {exec_msg}')
 
     @mock.patch('src.core.consumer.Published.objects.create')

@@ -15,6 +15,9 @@ django-cache-url==3.4.5 ; python_full_version == "3.12.1" \
 django-configurations[cache,database,email,search]==2.5 ; python_full_version == "3.12.1" \
     --hash=sha256:63fa252c40dc88ea17b8b90f5f4a31a2726e586acb1ff0edc74c228c61f19e5d \
     --hash=sha256:cf063b99ad30013df49eaa971bd8543deffb008ff080cf3a92955dbccfe81a5c
+django-cors-headers==4.3.1 ; python_full_version == "3.12.1" \
+    --hash=sha256:0b1fd19297e37417fc9f835d39e45c8c642938ddba1acce0c1753d3edef04f36 \
+    --hash=sha256:0bf65ef45e606aff1994d35503e6b677c0b26cafff6506f8fd7187f3be840207
 django-outbox-pattern==1.0.1 ; python_full_version == "3.12.1" \
     --hash=sha256:9db96fe073c4258ff0f992b454a4815fa06709defd01008d67f7d74b7392cd06 \
     --hash=sha256:ae04163a42d1e9d156a0a03a720f3e20795082df37277fa185db5b1fd95029c5

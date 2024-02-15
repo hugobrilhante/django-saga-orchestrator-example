@@ -132,6 +132,21 @@ search = ["dj-search-url"]
 testing = ["dj-database-url", "dj-email-url", "dj-search-url", "django-cache-url (>=1.0.0)"]
 
 [[package]]
+name = "django-cors-headers"
+version = "4.3.1"
+description = "django-cors-headers is a Django application for handling the server headers required for Cross-Origin Resource Sharing (CORS)."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "django-cors-headers-4.3.1.tar.gz", hash = "sha256:0bf65ef45e606aff1994d35503e6b677c0b26cafff6506f8fd7187f3be840207"},
+    {file = "django_cors_headers-4.3.1-py3-none-any.whl", hash = "sha256:0b1fd19297e37417fc9f835d39e45c8c642938ddba1acce0c1753d3edef04f36"},
+]
+
+[package.dependencies]
+asgiref = ">=3.6"
+Django = ">=3.2"
+
+[[package]]
 name = "django-outbox-pattern"
 version = "1.0.1"
 description = "A django application to make it easier to use the transactional outbox pattern"
@@ -564,4 +579,4 @@ brotli = ["Brotli"]
 [metadata]
 lock-version = "2.0"
 python-versions = "3.12.1"
-content-hash = "058f94b52dbb8b3dcb00e5e926ab5af26363d16578eb91114a9e083941075963"
+content-hash = "70e8b16c6908c18486e0cb9f8e6285f0aba93d5572471ac84f9a2c4783b57589"

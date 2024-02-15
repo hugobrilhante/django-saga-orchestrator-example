@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from .models import Order
 from .models import OrderItem
+from .models import Transaction
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -40,3 +41,9 @@ class OrderSerializer(serializers.ModelSerializer):
         for item in items:
             OrderItem.objects.create(order=order, **item)
         return order
+
+
+class TransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Transaction
+        fields = '__all__'

@@ -1,70 +1,95 @@
-from unittest.mock import MagicMock
-from unittest.mock import patch
+from unittest import mock
 
 from django.test import TestCase
 
-from src.core.consumer import STOPPED
-from src.core.consumer import SUCCESS
 from src.core.consumer import cancel_order
 from src.core.consumer import create_order
 from src.core.consumer import delivery_order
+from src.core.consumer import handle_action
 from src.core.consumer import receiver
 
 
 class TestConsumer(TestCase):
-    @patch('src.core.consumer.Published.objects.create')
-    @patch('src.core.consumer.handle_action', return_value=SUCCESS)
-    def test_receiver_when_create_order(self, mock_handle_action, mock_published):
-        payload = MagicMock()
-        payload.body = {'action': 'create_order', 'data': [], 'transaction_id': 'test_transaction_id'}
-        receiver(payload)
-        mock_handle_action.assert_called_once_with(create_order, 'create', 'test_transaction_id', [])
-        mock_published.assert_called_once_with(
-            destination='/exchange/saga/orchestrator',
-            body={'data': [], 'service': 'order', 'transaction_id': 'test_transaction_id', 'status': SUCCESS},
-        )
+    def setUp(self):
+        self.transaction_id = 'transaction_id'
+        self.data = {'key': 'value'}
+        self.payload = mock.MagicMock()
+        self.payload.body = {
+            'status': 'SUCCESS',
+            'data': self.data,
+            'sender': 'order',
+            'transaction_id': self.transaction_id,
+        }
 
-    @patch('src.core.consumer.Published.objects.create')
-    @patch('src.core.consumer.handle_action', return_value=STOPPED)
-    def test_receiver_when_cancel_order(self, mock_handle_action, mock_published):
-        payload = MagicMock()
-        payload.body = {'action': 'cancel_order', 'data': [], 'transaction_id': 'test_transaction_id'}
-        receiver(payload)
-        mock_handle_action.assert_called_once_with(cancel_order, 'cancel', 'test_transaction_id')
-        mock_published.assert_called_once_with(
-            destination='/exchange/saga/orchestrator',
-            body={'data': [], 'service': 'order', 'transaction_id': 'test_transaction_id', 'status': STOPPED},
-        )
+    def test_create_order(self):
+        self.payload.body['action'] = 'create_order'
+        with mock.patch('src.core.consumer.OrderSerializer') as mock_serializer:
+            with mock.patch('src.core.consumer.logger') as mock_logger:
+                create_order(self.transaction_id, self.data)
+                mock_serializer.assert_called_once_with(data={'transaction_id': self.transaction_id, **self.data})
+                mock_serializer.return_value.is_valid.assert_called_once()
+                mock_serializer.return_value.save.assert_called_once()
+                mock_logger.info.assert_called_once_with(f'Order created with transaction id: {self.transaction_id}')
 
-    @patch('src.core.consumer.Published.objects.create')
-    @patch('src.core.consumer.handle_action', return_value=STOPPED)
-    def test_receiver_when_delivery_order(self, mock_handle_action, mock_published):
-        payload = MagicMock()
-        payload.body = {'action': 'delivery_order', 'data': [], 'transaction_id': 'test_transaction_id'}
-        receiver(payload)
-        mock_handle_action.assert_called_once_with(delivery_order, 'delivery', 'test_transaction_id')
-        mock_published.assert_called_once_with(
-            destination='/exchange/saga/orchestrator',
-            body={'data': [], 'service': 'order', 'transaction_id': 'test_transaction_id', 'status': STOPPED},
-        )
+    def test_cancel_order(self):
+        self.payload.body['action'] = 'cancel_order'
+        with mock.patch('src.core.consumer.Order.objects.get') as mock_get:
+            with mock.patch('src.core.consumer.logger') as mock_logger:
+                mock_order = mock.Mock()
+                mock_get.return_value = mock_order
+                cancel_order(self.transaction_id)
+                mock_order.save.assert_called_once()
+                mock_logger.info.assert_called_once_with(f'Order canceled with transaction id: {self.transaction_id}')
 
-    @patch('src.core.consumer.OrderSerializer')
-    @patch('src.core.consumer.logger')
-    def test_create_order(self, mock_logger, mock_order_serializer):
-        create_order('test_transaction_id', {})
-        mock_order_serializer.assert_called_once_with(data={'transaction_id': 'test_transaction_id'})
-        mock_logger.info.assert_called_once_with('Order created with transaction id: test_transaction_id')
+    def test_delivery_order(self):
+        self.payload.body['action'] = 'delivery_order'
+        with mock.patch('src.core.consumer.Order.objects.get') as mock_get:
+            with mock.patch('src.core.consumer.logger') as mock_logger:
+                mock_order = mock.Mock()
+                mock_get.return_value = mock_order
+                delivery_order(self.transaction_id)
+                mock_order.save.assert_called_once()
+                mock_logger.info.assert_called_once_with(f'Order delivered with transaction id: {self.transaction_id}')
 
-    @patch('src.core.consumer.Order.objects.get')
-    @patch('src.core.consumer.logger')
-    def test_cancel_order(self, mock_logger, mock_get):
-        cancel_order('test_transaction_id')
-        mock_get.assert_called_once_with(transaction_id='test_transaction_id')
-        mock_logger.info.assert_called_once_with('Order canceled with transaction id: test_transaction_id')
+    def test_handle_action(self):
+        mock_func = mock.MagicMock()
+        action = 'action'
+        args = ('arg1',)
+        kwargs = {'key': 'value'}
+        with mock.patch('src.core.consumer.logger') as mock_logger:
+            handle_action(mock_func, action, 'SUCCESS', *args, **kwargs)
+            mock_func.assert_called_once_with(*args, **kwargs)
+            mock_logger.exception.assert_not_called()
 
-    @patch('src.core.consumer.Order.objects.get')
-    @patch('src.core.consumer.logger')
-    def test_delivery_order(self, mock_logger, mock_get):
-        delivery_order('test_transaction_id')
-        mock_get.assert_called_once_with(transaction_id='test_transaction_id')
-        mock_logger.info.assert_called_once_with('Order delivered with transaction id: test_transaction_id')
+            # Test when an exception is raised
+            exec_msg = 'Test Exception'
+            mock_func.side_effect = Exception(exec_msg)
+            handle_action(mock_func, action, 'SUCCESS', *args, **kwargs)
+            mock_logger.exception.assert_called_once_with(f'Error {action} order: {exec_msg}')
+
+    @mock.patch('src.core.consumer.Published.objects.create')
+    def test_receiver_create_order(self, mock_published_create):
+        mock_create_order = mock.MagicMock()
+        with mock.patch('src.core.consumer.create_order', mock_create_order):
+            self.payload.body['action'] = 'create_order'
+            receiver(self.payload)
+            mock_create_order.assert_called_once_with(self.transaction_id, self.data)
+            self.assertTrue(mock_published_create.called)
+
+    @mock.patch('src.core.consumer.Published.objects.create')
+    def test_receiver_cancel_order(self, mock_published_create):
+        mock_confirm_order = mock.MagicMock()
+        with mock.patch('src.core.consumer.cancel_order', mock_confirm_order):
+            self.payload.body['action'] = 'cancel_order'
+            receiver(self.payload)
+            mock_confirm_order.assert_called_once_with(self.transaction_id)
+            self.assertTrue(mock_published_create.called)
+
+    @mock.patch('src.core.consumer.Published.objects.create')
+    def test_receiver_delivery_order(self, mock_published_create):
+        mock_delivery_order = mock.MagicMock()
+        with mock.patch('src.core.consumer.delivery_order', mock_delivery_order):
+            self.payload.body['action'] = 'delivery_order'
+            receiver(self.payload)
+            mock_delivery_order.assert_called_once_with(self.transaction_id)
+            self.assertTrue(mock_published_create.called)

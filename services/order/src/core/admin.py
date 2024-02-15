@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from .models import Order
 from .models import OrderItem
+from .models import Transaction
 
 
 class OrderItemInline(admin.TabularInline):
@@ -17,3 +18,10 @@ class OrderAdmin(admin.ModelAdmin):
     search_fields = ['id', 'customer_id']
     readonly_fields = ['created', 'modified', 'transaction_id']
     inlines = [OrderItemInline]
+
+
+@admin.register(Transaction)
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = ['transaction_id', 'nodes', 'logs']
+    search_fields = ['transaction_id']
+    list_filter = ['transaction_id']
