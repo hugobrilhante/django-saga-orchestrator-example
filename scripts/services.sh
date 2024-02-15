@@ -3,6 +3,14 @@
 set -e
 
 # Function to run migrations
+run_tests() {
+    echo "Running migrations..."
+    source scripts/manage.sh order test
+    source scripts/manage.sh stock test
+    source scripts/manage.sh payment test
+}
+
+# Function to run migrations
 run_migrations() {
     echo "Running migrations..."
     source scripts/manage.sh order migrate > /dev/null 2>&1
@@ -68,7 +76,8 @@ run_all() {
 
 # Usage instructions
 usage() {
-    echo "Usage: $0 {migrations|data|rabbitmq|exchange|services|stop|start}"
+    echo "Usage: $0 {tests|migrations|data|rabbitmq|exchange|services|stop|start}"
+    echo "  tests: Run tests for order, stock, and payment"
     echo "  migrations: Run database migrations for order, stock, and payment"
     echo "  data: Load data into the database for order, stock, and payment"
     echo "  rabbitmq: Start RabbitMQ service"
@@ -81,6 +90,9 @@ usage() {
 
 # Choose which part to execute based on command line argument
 case "$1" in
+    tests)
+        run_tests
+        ;;
     migrations)
         run_migrations
         ;;
@@ -106,5 +118,3 @@ case "$1" in
         usage
         ;;
 esac
-
-exit 0

@@ -3,6 +3,7 @@ import logging
 from django.db import transaction
 from django_outbox_pattern.models import Published
 from django_outbox_pattern.payloads import Payload
+from rest_framework.exceptions import APIException
 
 from .models import Order
 from .serializers import OrderSerializer
@@ -40,9 +41,12 @@ def handle_action(func, action, status, *args, **kwargs):
     try:
         func(*args, **kwargs)
     except Exception as exc:
-        logger.exception(f'Error {action} order: {exc}')
-        errors = str(exc)
+        if isinstance(exc, APIException):
+            errors = exc.get_full_details()
+        else:
+            errors = str(exc)
         status = FAILED
+        logger.exception(f'Error {action} order: {errors}')
     return status, errors
 
 

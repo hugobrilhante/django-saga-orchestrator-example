@@ -82,22 +82,34 @@ class Orchestrator:
         transaction_id = body.get('transaction_id')
         self.execute(data, transaction_id, service, status, errors)
 
+    def _update_transaction(
+        self, transaction_id: str, service: str, color: str, delay: float = 0, logs: Optional[Dict] = None
+    ) -> None:
+        sleep(delay)
+        transaction = self.transactions[transaction_id]
+        for node in transaction.nodes:
+            if node['data']['label'] == service:
+                node['style']['background'] = color
+        transaction.logs = logs
+        transaction.save()
+
     def execute(self, data: dict, transaction_id: str, service: str, status: str, errors: str) -> None:
-        self._start_transaction(transaction_id)
         body = None
         destination = None
-        action = self._get_action(transaction_id)
-        compensate = self._get_compensate(service)
+        self._start_transaction(transaction_id)
         if status == SUCCESS:
+            action = self._get_action(transaction_id)
             body, destination = action.execute(data, transaction_id)
-            self._update_transaction(transaction_id, service, '#198754', 0.5)
+            self._update_transaction(transaction_id, service, '#198754', 0.1)
         elif status == FAILED:
+            compensate = self._get_compensate(service)
             body, destination = compensate.execute(data, transaction_id)
             logs = {service: f'Error on transaction id {transaction_id}: {errors}'}
-            self._update_transaction(transaction_id, service, '#DC3545', 0.5, logs)
+            self._update_transaction(transaction_id, service, '#DC3545', 0.1, logs)
         elif status == ROLL_BACK:
+            compensate = self._get_compensate(service)
             body, destination = compensate.execute(data, transaction_id)
-            self._update_transaction(transaction_id, service, '#FFC107', 0.5)
+            self._update_transaction(transaction_id, service, '#FFC107', 0.1)
         if not destination:
             logger.info(f'Transaction concluded with transaction id: {transaction_id}')
         else:
@@ -113,18 +125,6 @@ class Orchestrator:
 
     def register_steps(self, steps: List[str]) -> None:
         self.steps = steps
-
-    def _update_transaction(
-        self, transaction_id: str, service: str, color: str, delay: float = 0, logs: Optional[Dict] = None
-    ) -> None:
-        sleep(delay)
-        transaction = self.transactions[transaction_id]
-        for node in transaction.nodes:
-            if node['data']['label'] == service:
-                node['style']['background'] = color
-                self.transactions[transaction_id].nodes = transaction.nodes
-        transaction.logs = logs
-        transaction.save()
 
 
 class OrchestratorConfigurator:

@@ -17,39 +17,14 @@ import 'reactflow/dist/style.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./page.css"
 
-const defaultViewport = {x: 0, y: 0, zoom: 5};
-const initialEdges = [
-    {
-        id: 'e1-2',
-        source: '1',
-        target: '2',
-        type: "step",
-        animated: true,
-        markerEnd: {
-            type: MarkerType.Arrow,
-        },
-        style: {
-            strokeWidth: 2,
-        },
-    },
-    {
-        id: 'e2-3',
-        source: '2',
-        target: '3',
-        type: "step",
-        animated: true,
-        markerEnd: {
-            type: MarkerType.Arrow,
-        },
-        style: {
-            strokeWidth: 2,
-        },
+const defaultViewport = {x: 0, y: 0, zoom: 1.5};
 
-    },
-    {
-        id: 'e3-4',
-        source: '3',
-        target: '4',
+const initialEdges = [];
+for (let i = 1; i <= 3; i++) {
+    const edge = {
+        id: `e${i}-${i + 1}`,
+        source: `${i}`,
+        target: `${i + 1}`,
         type: "step",
         animated: true,
         markerEnd: {
@@ -58,9 +33,10 @@ const initialEdges = [
         style: {
             strokeWidth: 2,
         },
+    };
+    initialEdges.push(edge);
+}
 
-    }
-];
 
 
 export default function Home() {
@@ -69,7 +45,7 @@ export default function Home() {
     const [price, setPrice] = useState(2600)
     const [quantity, setQuantity] = useState(1)
     const [transactionId, setTransactionID] = useState("")
-    const [logs, setLogs] = useState({'order': '', 'stock': '', 'payment': ''})
+    const [logs, setLogs] = useState({'stock': '', 'payment': ''})
 
     useEffect(() => {
         const fetchData = async () => {
@@ -84,7 +60,7 @@ export default function Home() {
             }
         };
         if (transactionId !== "") {
-            const interval = setInterval(fetchData, 1000);
+            const interval = setInterval(fetchData, 500);
             return () => clearInterval(interval);
         }
 
@@ -128,6 +104,7 @@ export default function Home() {
                                 nodes={nodes}
                                 edges={edges}
                                 defaultViewport={defaultViewport}
+                                fitView={true}
                             >
                                 <MiniMap zoomable pannable/>
                                 <Controls/>
@@ -159,7 +136,6 @@ export default function Home() {
                                 <PanelResizeHandle className="w-0.5 bg-black"/>
                                 <Panel defaultSize={50} className="pt-lg-2 p-lg-2">
                                     <h5>Logs:</h5>
-                                    <h5>Order: <span className="text-sm  text-red-600">{logs.order}</span></h5>
                                     <h5>Stock: <span className="text-sm  text-red-600">{logs.stock}</span></h5>
                                     <h5>Payment: <span className="text-sm  text-red-600">{logs.payment}</span></h5>
                                 </Panel>
@@ -203,10 +179,10 @@ export default function Home() {
                                     Press buy now and watch the magic happen.
                                 </p>
                                 <p className="text-xs text-gray-600">
-                                     For stock error: QTY = 101
+                                    {"For stock error: QTY > 100"}
                                 </p>
                                 <p className="-m-3 text-xs text-gray-600">
-                                     For payment error: USD = 5001
+                                    {"For payment error: USD > 5000"}
                                 </p>
                             </div>
                         </div>
