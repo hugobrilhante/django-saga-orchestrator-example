@@ -65,6 +65,33 @@ class Orchestrator:
         logger.debug(f'Compensation in execution: {compensation.action}')
         return compensation
 
+    def _handle_success(self, data: dict, transaction_id: str, service: str, status: str) -> None:
+        action = self._get_action(transaction_id)
+        body, destination = action.execute(data, transaction_id)
+        self._update_transaction(transaction_id, service, '#198754', 0.1)
+        self._log_or_send(body, destination, transaction_id, status)
+
+    def _handle_failed(self, data: dict, transaction_id: str, service: str, errors: str, status: str) -> None:
+        compensate = self._get_compensate(service)
+        body, destination = compensate.execute(data, transaction_id)
+        logs = {service: f'Error on transaction id {transaction_id}: {errors}'}
+        self._update_transaction(transaction_id, service, '#DC3545', 0.1, logs)
+        self._log_or_send(body, destination, transaction_id, status)
+
+    def _handle_roll_back(self, data: dict, transaction_id: str, service: str, status: str) -> None:
+        compensate = self._get_compensate(service)
+        body, destination = compensate.execute(data, transaction_id)
+        self._update_transaction(transaction_id, service, '#FFC107', 0.1)
+        self._log_or_send(body, destination, transaction_id, status)
+
+    def _log_or_send(self, body: dict, destination: str, transaction_id: str, status: str) -> None:
+        if not destination:
+            logger.info(f'Transaction concluded with transaction id: {transaction_id}')
+        else:
+            logger.debug(f'Sending {body} to {destination} with status: {status}')
+            body.update(status=status)
+            self._sender(destination, body)
+
     def _start_transaction(self, transaction_id: str) -> None:
         if transaction_id not in self.transactions_steps:
             self.transactions[transaction_id] = Transaction.objects.create(transaction_id=transaction_id)
@@ -94,28 +121,13 @@ class Orchestrator:
         transaction.save()
 
     def execute(self, data: dict, transaction_id: str, service: str, status: str, errors: str) -> None:
-        body = None
-        destination = None
         self._start_transaction(transaction_id)
         if status == SUCCESS:
-            action = self._get_action(transaction_id)
-            body, destination = action.execute(data, transaction_id)
-            self._update_transaction(transaction_id, service, '#198754', 0.1)
+            self._handle_success(data, transaction_id, service, SUCCESS)
         elif status == FAILED:
-            compensate = self._get_compensate(service)
-            body, destination = compensate.execute(data, transaction_id)
-            logs = {service: f'Error on transaction id {transaction_id}: {errors}'}
-            self._update_transaction(transaction_id, service, '#DC3545', 0.1, logs)
+            self._handle_failed(data, transaction_id, service, errors, FAILED)
         elif status == ROLL_BACK:
-            compensate = self._get_compensate(service)
-            body, destination = compensate.execute(data, transaction_id)
-            self._update_transaction(transaction_id, service, '#FFC107', 0.1)
-        if not destination:
-            logger.info(f'Transaction concluded with transaction id: {transaction_id}')
-        else:
-            logger.debug(f'Sending {body} to {destination} with status: {status}')
-            body.update(status=status)
-            self._sender(destination, body)
+            self._handle_roll_back(data, transaction_id, service, ROLL_BACK)
 
     def register_action(self, action: str, instance: Action) -> None:
         self.actions[action] = instance
