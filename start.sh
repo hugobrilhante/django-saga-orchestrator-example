@@ -27,6 +27,11 @@ rename_env_files "$services_dir"
 # Start necessary services
 source ./scripts/services.sh start
 
+# Install dependencies
+echo "Installing dependencies..."
+npm --prefix ./web install
+
 # Run the web server in development
 echo "Starting web server..."
 npm --prefix ./web run dev
+
